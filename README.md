@@ -1,18 +1,30 @@
 # netlab-platform
 
-A browser-based network lab platform for studying and coursework — with **real
-emulation, real packets, and real configs**. Not a CLI simulator.
+A browser-based network lab platform with **real emulation, real packets, and real configs**.
 
-Open a topology in the browser, boot real network OS nodes, and get live
-console access to each device. Labs are declared as code, graded automatically
-against live state, and tracked per student.
+Open a topology in the browser, boot real network OS nodes, and get live console access to each device. Labs are declared as code, graded automatically against live state, and tracked per student.
 
-> **This is not SwitchLab.** SwitchLab simulates CLIs in the browser. This
-> platform orchestrates real NOS containers with
-> [Containerlab](https://containerlab.dev) — FRR, VyOS, Arista cEOS, Juniper
-> vJunos, Cisco IOS-XE, and Linux hosts — so `show ip ospf neighbor` returns
-> output from a real routing daemon, and a packet you send traverses real
-> virtual interfaces.
+> **This is not a CLI simulator.**  
+> Unlike SwitchLab-style tools that fake device output in the browser, this platform orchestrates real NOS containers with [Containerlab](https://containerlab.dev) — FRR, VyOS, Arista cEOS, Juniper vJunos, Cisco IOS-XE, and Linux hosts. `show ip ospf neighbor` returns output from a real routing daemon, and packets traverse real virtual interfaces.
+
+---
+
+## Current Status
+
+| Area | Status |
+|------|--------|
+| Core lab deploy / destroy | Working (Containerlab + Docker fallback) |
+| Live console (xterm.js + WebSocket) | Working |
+| Session TTL, quotas, and reaper | Working |
+| FRR + Linux drivers | Solid |
+| Automated grading (pyATS / Batfish) | Implemented, expanding coverage |
+| Multi-vendor BYO images (cEOS, vJunos, IOS-XE) | Supported via upload + license acknowledgement |
+| Frontend (topology canvas + terminals) | Functional, continuing polish |
+| Instructor dashboard | Basic |
+
+The platform is usable today for real lab work. Docker + Containerlab on the lab host are required for full functionality.
+
+---
 
 ## Architecture
 
@@ -52,15 +64,15 @@ flowchart TB
     DR -- "containerlab deploy/exec" --> CL
 ```
 
-## Quick start
+---
+
+## Quick Start
 
 ### Prerequisites
 
-- Docker + [Containerlab](https://containerlab.dev/install/) on the host that
-  runs labs (the API drives them through the Docker socket)
+- **Docker + [Containerlab](https://containerlab.dev/install/)** on the host that runs labs (the API talks to the Docker socket and `containerlab` binary)
 - Python 3.12+, Node 20+
-- For Cisco IOS-XE, Arista cEOS, or Juniper vJunos: your own image, supplied
-  under your own license — see [BYO-image guide](docs/byo-image-guide.md)
+- For Cisco IOS-XE, Arista cEOS, or Juniper vJunos: your own licensed images — see [BYO-image guide](docs/byo-image-guide.md)
 
 ### Run it
 
@@ -72,18 +84,19 @@ flowchart TB
 docker compose up --build
 ```
 
-- Web UI: http://localhost:5173
-- API + OpenAPI docs: http://localhost:8000/docs
+- Web UI → http://localhost:5173  
+- API + OpenAPI docs → http://localhost:8000/docs
 
 ### Deploy the sample lab
 
-1. Sign in (GitHub OAuth, or dev mode) and open **Labs**.
+1. Sign in (GitHub OAuth or dev mode) and open **Labs**.
 2. Open **Two-Router OSPF with a VLAN-Aware Switch**.
 3. Click **Deploy**. Each node gets a live terminal tab.
-4. Work the guide in `labs/ospf-two-router/guide.md`, then click **Run checks**
-   to grade the objectives against live state.
+4. Work through `labs/ospf-two-router/guide.md`, then click **Run checks** to grade against live state.
 
-## Repo layout
+---
+
+## Repo Layout
 
 ```
 netlab-platform/
@@ -98,26 +111,29 @@ netlab-platform/
 ├── infra/
 │   ├── helm/           # Hosted deployment chart
 │   └── terraform/      # Hosted deployment (single Docker host)
-├── docs/               # Architecture, BYO-image guide, instructor guide, API
+├── docs/               # Architecture, BYO-image guide, instructor guide
 └── .github/workflows/  # CI, topology validation, image publish
 ```
 
-## Network OS support
+---
+
+## Network OS Support
 
 | Driver | Image | How you get it |
-|---|---|---|
-| FRR | `quay.io/frrouting/frr-containerlab:10.7.1` | Public registry, pulled automatically |
-| Linux hosts | `alpine:3.20` | Public registry, pulled automatically |
-| VyOS | user-built `vyos-runtime:<version>` | Build from a nightly ISO — see `scripts/build-vyos-image.sh` |
-| Arista cEOS | BYO | Download from arista.com under your account, upload via the UI |
-| Juniper vJunos-switch | BYO | Download from juniper.net under your account, upload via the UI |
-| Cisco IOS-XE | BYO | Your own image, uploaded via the UI — see [BYO-image guide](docs/byo-image-guide.md) |
+|--------|-------|----------------|
+| FRR | `quay.io/frrouting/frr-containerlab:10.7.1` | Public registry (pulled automatically) |
+| Linux hosts | `alpine:3.20` | Public registry (pulled automatically) |
+| VyOS | user-built `vyos-runtime:<version>` | Build from nightly ISO — see `scripts/build-vyos-image.sh` |
+| Arista cEOS | BYO | Download from arista.com, upload via the UI |
+| Juniper vJunos-switch | BYO | Download from juniper.net, upload via the UI |
+| Cisco IOS-XE | BYO | Your own image, upload via the UI — see [BYO-image guide](docs/byo-image-guide.md) |
 
-**No proprietary image is bundled, downloaded, or linked by this project.**
-Uploads are verified with SHA256 and require an explicit license
-acknowledgement. See [docs/byo-image-guide.md](docs/byo-image-guide.md).
+**No proprietary image is bundled, downloaded, or linked by this project.**  
+Uploads are verified with SHA256 and require an explicit license acknowledgement.
 
-## Coursework and grading
+---
+
+## Coursework and Grading
 
 Labs live in `labs/<slug>/` with three files:
 
@@ -125,9 +141,9 @@ Labs live in `labs/<slug>/` with three files:
 - `lab.yml` — objectives, each with an automated check
 - `guide.md` — step-by-step student guide
 
-Checks run against **live state** via pyATS/Genie (`show` commands on the
-running node) or Batfish (config analysis). Results are stored per student
-and visible on the instructor dashboard.
+Checks run against **live state** via pyATS/Genie (`show` commands on the running node) or Batfish (config analysis). Results are stored per student and visible on the instructor dashboard.
+
+---
 
 ## Development
 
@@ -145,20 +161,21 @@ cd apps/web && npm run typecheck && npm run build
 cd apps/web && npx playwright test
 ```
 
-## Security model
+---
 
-- One isolated Containerlab lab per user session; per-session network
-  isolation; no shell escape from node consoles into the host (all
-  Containerlab/Docker calls use argument lists, never `shell=True`).
-- Uploads are sanitized (extension allowlist, size cap, SHA256 verification).
-- API routes are rate-limited; instructor and student roles are enforced
-  server-side; console sessions are logged, with a read-only observer mode
-  for instructors.
+## Security Model
+
+- One isolated Containerlab lab per user session with per-session network isolation
+- No shell escape from node consoles into the host (all Containerlab/Docker calls use argument lists — never `shell=True`)
+- Uploads sanitized (extension allowlist, size cap, SHA256 verification)
+- API rate-limited; instructor/student roles enforced server-side
+- Console sessions logged; read-only observer mode available for instructors
 
 See [docs/architecture.md](docs/architecture.md) for the full design.
 
+---
+
 ## License
 
-MIT — see [LICENSE](LICENSE). Third-party NOS images remain property of their
-vendors; see the license notice in [LICENSE](LICENSE) and
-[docs/byo-image-guide.md](docs/byo-image-guide.md).
+MIT — see [LICENSE](LICENSE).  
+Third-party NOS images remain property of their vendors. See the license notice in [LICENSE](LICENSE) and [docs/byo-image-guide.md](docs/byo-image-guide.md).
