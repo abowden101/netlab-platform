@@ -1,0 +1,25 @@
+name: Integration — 2-node FRR lab
+
+# Real end-to-end check: deploys the 2-node FRR fixture on a runner with
+# Docker + Containerlab, waits for the OSPF adjacency to reach FULL, then
+# destroys the lab. Runs on push to main and on demand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/drivers/**"
+      - "labs/**"
+      - "scripts/ci-frr-lab.sh"
+  workflow_dispatch:
+
+jobs:
+  frr-lab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Containerlab
+        run: |
+          curl -sL https://get.containerlab.dev | sudo bash
+          containerlab version
+      - name: Deploy 2-node FRR lab and verify OSPF
+        run: bash scripts/ci-frr-lab.sh

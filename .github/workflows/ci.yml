@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python:
+    name: Python (drivers, topology, API)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff mypy pytest pyyaml fastapi "uvicorn[standard]" \
+            "sqlalchemy>=2.0" alembic "pydantic>=2" pydantic-settings PyJWT \
+            httpx python-multipart prometheus-client redis psycopg2-binary
+          pip install -e packages/shared -e packages/topology -e packages/drivers
+          pip install -r apps/api/requirements.txt
+      - name: Lint
+        run: ruff check packages apps scripts
+      - name: Typecheck
+        run: mypy packages/drivers/netlab_drivers packages/topology/netlab_topology
+      - name: Validate topologies
+        run: python scripts/validate-topologies.py
+      - name: Unit + API tests
+        run: pytest packages apps/api/tests -q
+
+  web:
+    name: Web (typecheck, build, E2E scaffold)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Typecheck + build
+        working-directory: apps/web
+        run: npm run build
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: E2E scaffold tests
+        working-directory: apps/web
+        run: npm run test:e2e
