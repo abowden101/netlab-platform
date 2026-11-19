@@ -1,0 +1,47 @@
+# Default values for netlab-platform.
+# Override in your own values file; never put secrets here.
+replicaCount: 1
+
+image:
+  api:
+    repository: ghcr.io/netlab-platform/api
+    tag: latest
+  web:
+    repository: ghcr.io/netlab-platform/web
+    tag: latest
+
+api:
+  port: 8000
+  # The API shells out to `containerlab` and `docker` on the lab host, so it
+  # needs the Docker socket. In production, prefer a dedicated lab host and
+  # restrict who can reach the API.
+  dockerSocket: /var/run/docker.sock
+  env:
+    maxLabsPerHost: 8
+    labTtlSeconds: 7200
+    labIdleTimeoutSeconds: 1800
+
+web:
+  port: 80
+
+ingress:
+  enabled: false
+  host: netlab.example.com
+  className: nginx
+
+postgres:
+  host: postgres
+  port: 5432
+  database: netlab
+  user: netlab
+  # Set via --set postgres.password=... or a Secret; never commit a password.
+  password: ""
+
+redis:
+  host: redis
+  port: 6379
+
+persistence:
+  uploads:
+    size: 10Gi
+    storageClass: ""

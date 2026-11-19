@@ -1,0 +1,6 @@
+apiVersion: v2
+name: netlab-platform
+description: Browser-based network lab platform with real Containerlab emulation
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

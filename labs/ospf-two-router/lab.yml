@@ -1,0 +1,49 @@
+id: ospf-two-router
+title: Two-Router OSPF with a VLAN-Aware Switch
+description: >
+  Build a two-router OSPF backbone in area 0, hang a VLAN-aware switch off
+  it, and prove three things: the OSPF adjacency comes up, each router
+  learns the other's loopback, and the VLANs stay isolated at L2 while the
+  routers carry traffic between them.
+topology: topology.clab.yml
+estimated_minutes: 45
+objectives:
+  - id: ospf-adjacency
+    title: OSPF adjacency FULL between R1 and R2
+    description: On r1, the neighbor on the 10.0.12.0/30 link must be FULL.
+    check:
+      engine: pyats
+      node: r1
+      command: show ip ospf neighbor
+      expect:
+        state: FULL
+  - id: ospf-route
+    title: R2 learns R1's loopback (1.1.1.1/32) via OSPF
+    description: The OSPF table on r2 must contain r1's loopback.
+    check:
+      engine: pyats
+      node: r2
+      command: show ip route ospf
+      expect:
+        contains: "1.1.1.1/32"
+  - id: vlan-isolation
+    title: VLAN 10 and VLAN 20 are isolated on SW1
+    description: >
+      The switch config must carry both VLANs, with no single port a member
+      of both — so h1 cannot reach h2 at L2.
+    check:
+      engine: batfish
+      node: sw1
+      config: sw1-setup.sh
+      expect:
+        vlans: [10, 20]
+        isolated: true
+  - id: inter-vlan-routing
+    title: R1 has an OSPF route to VLAN 20 (10.0.20.0/24)
+    description: R1 must learn the VLAN 20 network from R2 via OSPF.
+    check:
+      engine: pyats
+      node: r1
+      command: show ip route
+      expect:
+        contains: "10.0.20.0/24"

@@ -1,0 +1,96 @@
+# Local development stack for netlab-platform.
+#
+# The API orchestrates labs through Containerlab + Docker on the HOST, so the
+# api service mounts the Docker socket and the host's containerlab binary path.
+# The host must have Docker and Containerlab installed. See docs/architecture.md.
+#
+#   docker compose up --build
+#   Web UI: http://localhost:5173   API: http://localhost:8000/docs
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: netlab
+      POSTGRES_PASSWORD: netlab-dev-only
+      POSTGRES_DB: netlab
+    volumes:
+      - netlab-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netlab -d netlab"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - netlab
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - netlab-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - netlab
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg2://netlab:netlab-dev-only@db:5432/netlab
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: dev-only-change-me-in-production
+      LAB_TTL_SECONDS: "7200"
+      LAB_IDLE_TIMEOUT_SECONDS: "1800"
+      MAX_LABS_PER_HOST: "8"
+      MAX_CPU_PER_LAB: "4.0"
+      MAX_MEM_PER_LAB_MB: "4096"
+      UPLOAD_DIR: /app/uploads
+      CONTAINERLAB_BIN: containerlab
+      OAUTH_GITHUB_CLIENT_ID: ""
+      OAUTH_GITHUB_CLIENT_SECRET: ""
+      OAUTH_GOOGLE_CLIENT_ID: ""
+      OAUTH_GOOGLE_CLIENT_SECRET: ""
+    ports:
+      - "8000:8000"
+    volumes:
+      # Docker socket so the API can drive Containerlab/Docker on the host.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Host containerlab binary (mounted read-only if installed on host).
+      - /usr/local/bin/containerlab:/usr/local/bin/containerlab:ro
+      - ./labs:/app/labs:ro
+      - netlab-uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - netlab
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    networks:
+      - netlab
+
+volumes:
+  netlab-db:
+  netlab-redis:
+  netlab-uploads:
+
+networks:
+  netlab:
+    driver: bridge

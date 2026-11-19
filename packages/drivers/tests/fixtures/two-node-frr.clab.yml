@@ -1,0 +1,15 @@
+# Minimal two-node FRR lab used by the CI integration job
+# (scripts/ci-frr-lab.sh). Two FRR routers, one OSPF link, nothing else.
+name: ci-two-node-frr
+topology:
+  nodes:
+    r1:
+      kind: frr
+      image: quay.io/frrouting/frr-containerlab:10.7.1
+      startup-config: r1.frr.conf
+    r2:
+      kind: frr
+      image: quay.io/frrouting/frr-containerlab:10.7.1
+      startup-config: r2.frr.conf
+  links:
+    - endpoints: ["r1:eth1", "r2:eth1"]

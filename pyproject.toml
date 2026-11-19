@@ -1,0 +1,20 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP"]
+# E501: long lines are fine in config templates; B008: Depends() in route
+# signatures is the standard FastAPI idiom, not a bug.
+ignore = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+ignore_missing_imports = true
+disallow_untyped_defs = true
+warn_return_any = false
+
+[tool.pytest.ini_options]
+testpaths = ["packages/drivers/tests", "packages/topology/tests", "apps/api/tests"]
+pythonpath = ["packages/drivers", "packages/topology", "packages/shared", "apps/api"]

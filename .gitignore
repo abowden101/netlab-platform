@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# Node
+node_modules/
+apps/web/dist/
+apps/web/.vite/
+apps/web/playwright-report/
+apps/web/test-results/
+
+# Env / secrets — NEVER commit real credentials
+.env
+.env.*
+!.env.example
+
+# BYO vendor images — must never be committed
+*.qcow2
+*.vmdk
+*.ova
+*.iso
+*.img
+images/
+uploads/
+*.tar
+!scripts/*.tar
+
+# Containerlab / lab runtime state
+.clab/
+labs/*/.clab/
+*.clab.yml.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local test artifacts
+test.db
+test.db-journal
+*.db
+*.db-journal
+.coverage
+htmlcov/
