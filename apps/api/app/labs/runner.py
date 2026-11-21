@@ -49,8 +49,14 @@ class ContainerlabRunner:
         self.binary = binary
 
     def deploy(self) -> None:
+        # --disable-rp-filter: containerlab tries to write
+        # /proc/sys/net/ipv4/conf/all/rp_filter on the Docker host. On
+        # Docker Desktop that path is read-only from inside a container,
+        # so the deploy fails before any node starts. Skipping it is safe
+        # for symmetric lab traffic (OSPF adjacencies, loopback routes).
         result = _run(
-            [self.binary, "deploy", "-t", self.topology_file], timeout_s=600
+            [self.binary, "deploy", "--disable-rp-filter", "-t", self.topology_file],
+            timeout_s=600,
         )
         if result.returncode != 0:
             raise RunnerError(
